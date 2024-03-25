@@ -285,6 +285,10 @@ if __name__ == "__main__":
         args.model = args.model_path
     if args.num_gpus > 1:
         args.tensor_parallel_size = args.num_gpus
+    if args.host == "0.0.0.0":
+        if args.worker_address.startswith("http://localhost"):
+            import socket
+            args.worker_address = f"http://{socket.gethostbyname(socket.gethostname())}:{args.port}"
 
     engine_args = AsyncEngineArgs.from_cli_args(args)
     engine = AsyncLLMEngine.from_engine_args(engine_args)

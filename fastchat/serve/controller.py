@@ -296,6 +296,11 @@ async def register_worker(request: Request):
     )
 
 
+@app.post("/list_workers")
+async def list_workers():
+    return {k: str(v) for k, v in controller.worker_info.items()}
+
+
 @app.post("/refresh_all_workers")
 async def refresh_all_workers():
     models = controller.refresh_all_workers()
