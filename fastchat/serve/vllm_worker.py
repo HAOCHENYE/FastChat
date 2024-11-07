@@ -107,7 +107,6 @@ class VLLMWorker(BaseModelWorker):
             n=1,
             temperature=temperature,
             top_p=top_p,
-            use_beam_search=use_beam_search,
             stop=list(stop),
             stop_token_ids=stop_token_ids,
             max_tokens=max_new_tokens,
@@ -243,11 +242,11 @@ async def api_model_details(request: Request):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--host", type=str, default="localhost")
+    parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=21002)
-    parser.add_argument("--worker-address", type=str, default="http://localhost:21002")
+    parser.add_argument("--worker-address", type=str, default=None)
     parser.add_argument(
-        "--controller-address", type=str, default="http://localhost:21001"
+        "--controller-address", type=str, default=None,
     )
     parser.add_argument("--model-path", type=str, default="lmsys/vicuna-7b-v1.5")
     parser.add_argument(
@@ -286,11 +285,18 @@ if __name__ == "__main__":
     if args.num_gpus > 1:
         args.tensor_parallel_size = args.num_gpus
 
+    import subprocess
+
+    if args.worker_address is None:
+        worker_addr = subprocess.getoutput("hostname -I").split()[0]
+        worker_addr = f"http://{worker_addr}:{args.port}"
+    print(f"worker_addr: {worker_addr}")
+
     engine_args = AsyncEngineArgs.from_cli_args(args)
     engine = AsyncLLMEngine.from_engine_args(engine_args)
     worker = VLLMWorker(
         args.controller_address,
-        args.worker_address,
+        worker_addr,
         worker_id,
         args.model_path,
         args.model_names,
