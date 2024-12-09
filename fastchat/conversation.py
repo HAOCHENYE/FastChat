@@ -39,6 +39,7 @@ class SeparatorStyle(IntEnum):
     GEMMA = auto()
     CLLM = auto()
     DEFAULT = auto()
+    INTERNLM = auto()
 
 
 IMAGE_PLACEHOLDER_STR = "$$<image>$$"
@@ -323,6 +324,17 @@ class Conversation:
                     ret += role + ": " + message + "\n"
                 else:
                     ret += role + ":"
+            return ret
+        elif self.sep_style == SeparatorStyle.INTERNLM:
+            ret = "" if not self.system_message else system_prompt + self.sep + "\n"
+            for role, message in self.messages:
+                if message:
+                    if type(message) is tuple:
+                        message, images = message
+                        message = IMAGE_PLACEHOLDER_STR * len(images) + message
+                    ret += role + "\n" + message + self.sep + "\n"
+                else:
+                    ret += role + "\n"
             return ret
         else:
             raise ValueError(f"Invalid style: {self.sep_style}")
@@ -2298,6 +2310,35 @@ register_conv_template(
     )
 )
 
+register_conv_template(
+    Conversation(
+        name="internlm2.5",
+        system_template="<|im_start|>system\n{system_message}",
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
+        sep_style=SeparatorStyle.INTERNLM,
+        sep="<|im_end|>",
+        stop_token_ids=[
+            2,
+            92542,
+        ],  # "<|endoftext|>", "<|im_start|>", "<|im_end|>"
+        stop_str="<|im_end|>",
+    )
+)
+
+register_conv_template(
+    Conversation(
+        name="internlm3",
+        system_template="<|im_start|>system\n{system_message}",
+        roles=("<|im_start|>user", "<|im_start|>assistant"),
+        sep_style=SeparatorStyle.INTERNLM,
+        sep="<|im_end|>",
+        stop_token_ids=[
+            2,
+            128131,
+        ],  # "<|endoftext|>", "<|im_start|>", "<|im_end|>"
+        stop_str="<|im_end|>",
+    )
+)
 
 if __name__ == "__main__":
     from fastchat.conversation import get_conv_template
