@@ -9,6 +9,46 @@ FastChat's core features include:
 - The training and evaluation code for state-of-the-art models (e.g., Vicuna, MT-Bench).
 - A distributed multi-model serving system with web UI and OpenAI-compatible RESTful APIs.
 
+## 内部使用说明
+
+由于 FastChat 官方仓库不再更新，并且很多内部需求也不适合直接往官仓提交，因此 fork 了一份内部版本的 FastChat 旨在解决:
+
+1. 修复了 FastChat 自带的 ChatML 格式存在一些对话模板的问题，使用 InternLM 系列模型时需要手动指定 `--conv-template internlm3` 。
+2. FastCHat `Controller & Worker` 的设计要求 `Worker` 显示的向 `Controller` 提供自身 IP，然而在分布式集群的情况下，我们很难预知 `Worker` 会被提交到哪个节点，以及对应的 IP 是多少。该 fork `Worker` 将会自动检测自身 IP （有多个网口的情况下，IP 可能不准，发现 controller 无法连接 worker 需要查看对应 worker 的代码）。
+3. 支持了 lmdeploy worker。需要注意的是**并没有支持 lmdeploy 可以配置的全量参数** 
+4. FastChat 支持的 OpenAI API 协议可能比较早，api server 入口不一定能解析全量入参。以 `chat` 接口为例，目前已知的，可以传入的参数为：
+  - `temperature`
+  - `top_p`
+  - `top_k`
+  - `frequency_penalty`
+  - `max_tokens`
+  - `stop`
+
+  传入上述以外的参数，可能会导致 api server 报错或者不被解析
+
+
+使用步骤
+
+1. 启动 controller
+
+```console
+python -m fastchat.serve.controller
+```
+
+2. 启动 server
+
+```console
+python -m fastchat.serve.openai_api_server
+```
+
+3. 注册 worker
+
+```console
+python -m fastchat.serve.lmdeploy_worker --model-path {hf_model_path}  --conv-template internlm3  -tp 1 --controller-address  http://{controller_ip}:21001
+```
+```
+
+
 ## News
 - [2024/03] 🔥 We released Chatbot Arena technical [report](https://arxiv.org/abs/2403.04132).
 - [2023/09] We released **LMSYS-Chat-1M**, a large-scale real-world LLM conversation dataset. Read the [report](https://arxiv.org/abs/2309.11998).
