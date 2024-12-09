@@ -62,6 +62,9 @@ from fastchat.protocol.api_protocol import (
     APITokenCheckResponseItem,
 )
 from fastchat.utils import build_logger
+import resource
+soft, hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+resource.setrlimit(resource.RLIMIT_NOFILE, (20480, hard))
 
 logger = build_logger("openai_api_server", "openai_api_server.log")
 
